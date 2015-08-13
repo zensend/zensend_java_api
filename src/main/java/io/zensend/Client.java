@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -117,6 +118,7 @@ public class Client {
     }
 
     // helper classes
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class ZenSendError {
         @JsonProperty("failcode")
         public String failCode;
@@ -129,16 +131,19 @@ public class Client {
         @JsonProperty("new_balance_in_pence")
         public BigDecimal newBalanceInPence;
     }
-    
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Result<T> {
         public T success;
         public ZenSendError failure;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Balance {
         public BigDecimal balance;
     }
-    
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private static class Prices {
         @JsonProperty("prices_in_pence")
         public HashMap<String, BigDecimal> pricesInPence;
