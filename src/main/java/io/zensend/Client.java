@@ -18,16 +18,22 @@ import com.mashape.unirest.request.body.MultipartBody;
 
 public class Client {
     private String apiKey;
-    private static final String ZENSEND_URL = "http://localhost:8084";
+    private String url;
+    private static final String ZENSEND_URL = "https://zensend.io";
 
     public Client(String apiKey) {
+        this(apiKey, ZENSEND_URL);
+    }
+
+    public Client(String apiKey, String url) {
         this.apiKey = apiKey;
+        this.url = url;
     }
 
     public SmsResult sendSms(Message message) throws JsonParseException, JsonMappingException, ZenSendException, IOException, UnirestException {
         assertNoCommas(message.numbers);
 
-        MultipartBody query = Unirest.post(ZENSEND_URL + "/v3/sendsms")
+        MultipartBody query = Unirest.post(this.url + "/v3/sendsms")
             .header("X-API-KEY", this.apiKey)
             .field("BODY", message.body)
             .field("NUMBERS", StringUtils.join(message.numbers, ","))
@@ -49,7 +55,7 @@ public class Client {
     }
 
     public OperatorLookupResult lookupOperator(String number) throws UnirestException, JsonParseException, JsonMappingException, ZenSendException, IOException {
-        HttpResponse<String> response = Unirest.get(ZENSEND_URL + "/v3/operator_lookup")
+        HttpResponse<String> response = Unirest.get(this.url + "/v3/operator_lookup")
             .header("X-API-KEY", this.apiKey)
             .queryString("NUMBER", number)
             .asString();
@@ -58,7 +64,7 @@ public class Client {
     }
 
     public HashMap<String, BigDecimal> getPrices() throws UnirestException, ZenSendException, JsonParseException, JsonMappingException, IOException {
-        HttpResponse<String> response = Unirest.get(ZENSEND_URL + "/v3/prices")
+        HttpResponse<String> response = Unirest.get(this.url + "/v3/prices")
             .header("X-API-KEY", this.apiKey)
             .asString();
 
@@ -66,7 +72,7 @@ public class Client {
     }
 
     public BigDecimal checkBalance() throws UnirestException, ZenSendException, JsonParseException, JsonMappingException, IOException {
-        HttpResponse<String> response = Unirest.get(ZENSEND_URL + "/v3/checkbalance")
+        HttpResponse<String> response = Unirest.get(this.url + "/v3/checkbalance")
                                                  .header("X-API-KEY", this.apiKey)
                                                  .asString();
 
