@@ -4,11 +4,11 @@
 
   <groupId>io.zensend</groupId>
   <artifactId>zensend</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.1</version>
   <packaging>jar</packaging>
 
   <name>zensend</name>
-  <url>http://maven.apache.org</url>
+  <url>https://github.com/zensend/zensend_java_api</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,4 +43,26 @@
     	<version>4.5</version>
     </dependency>
   </dependencies>
+  <scm>
+  	<url>https://github.com/zensend/zensend_java_api</url>
+  	<connection>scm:git:git://github.com/zensend/zensend_java_api.git</connection>
+  	<developerConnection>scm:git:git@github.com/zensend/zensend_java_api.git</developerConnection>
+  </scm>
+  <description>API for sending SMS messages or performing HLR lookups via ZenSend</description>
+  
+  <developers>
+    <developer>
+      <name>Ben Murphy</name>
+      <email>benm@fonix.com</email>
+      <organization>Fonix</organization>
+      <organizationUrl>http://www.fonix.io</organizationUrl>
+    </developer>
+  </developers>
+  
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+    </license>
+  </licenses>
 </project>
