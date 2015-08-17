@@ -1,83 +1,120 @@
 package io.zensend;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.fluent.Form;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
-import com.mashape.unirest.request.body.MultipartBody;
 
-public class Client {
+public class Client implements Closeable {
     private String apiKey;
     private String url;
     private static final String ZENSEND_URL = "https://zensend.io";
-
+    private CloseableHttpClient client;
+    
     public Client(String apiKey) {
-        this(apiKey, ZENSEND_URL);
+        this(apiKey, HttpClients.custom()
+                .setKeepAliveStrategy(new FixedKeepAliveStrategy(5 * 1000))
+                .build(), ZENSEND_URL);
     }
 
-    public Client(String apiKey, String url) {
+    public Client(String apiKey, CloseableHttpClient client) {
+        this(apiKey, client, ZENSEND_URL);
+    }
+    
+    public Client(String apiKey, CloseableHttpClient client, String url) {
         this.apiKey = apiKey;
         this.url = url;
+        this.client = client;
+    }
+    
+    public void close() throws IOException {
+        client.close();
     }
 
-    public SmsResult sendSms(Message message) throws JsonParseException, JsonMappingException, ZenSendException, IOException, UnirestException {
+    public SmsResult sendSms(Message message) throws ZenSendException, IOException {
         assertNoCommas(message.numbers);
 
-        MultipartBody query = Unirest.post(this.url + "/v3/sendsms")
-            .header("X-API-KEY", this.apiKey)
-            .field("BODY", message.body)
-            .field("NUMBERS", StringUtils.join(message.numbers, ","))
-            .field("ORIGINATOR", message.originator);
-
+        Form form = Form.form()
+                .add("BODY", message.body)
+                .add("NUMBERS", StringUtils.join(message.numbers, ","))
+                .add("ORIGINATOR", message.originator);
+                
         if (message.originatorType != null) {
-            query = query.field("ORIGINATOR_TYPE", message.originatorType.name().toLowerCase());
+            form = form.add("ORIGINATOR_TYPE", message.originatorType.name().toLowerCase());
         }
 
         if (message.timeToLiveInMinutes != null) {
-            query = query.field("TIMETOLIVE", message.timeToLiveInMinutes);
+            form = form.add("TIMETOLIVE", message.timeToLiveInMinutes.toString());
         }
 
         if (message.smsEncoding != null) {
-            query = query.field("ENCODING", message.smsEncoding.name().toLowerCase());
+            form = form.add("ENCODING", message.smsEncoding.name().toLowerCase());
         }
 
-        return handleResponse(query.asString(), new TypeReference<Result<SmsResult>>(){});
+        HttpPost post = new HttpPost(this.url + "/v3/sendsms");
+        post.setEntity(new UrlEncodedFormEntity(form.build(), "utf-8"));
+        
+        return handleHttpResponse(post, new TypeReference<Result<SmsResult>>(){});
+
+
+        
     }
 
-    public OperatorLookupResult lookupOperator(String number) throws UnirestException, JsonParseException, JsonMappingException, ZenSendException, IOException {
-        HttpResponse<String> response = Unirest.get(this.url + "/v3/operator_lookup")
-            .header("X-API-KEY", this.apiKey)
-            .queryString("NUMBER", number)
-            .asString();
+    public OperatorLookupResult lookupOperator(String number) throws ZenSendException, IOException {
+        
+        URI uri;
+        
+        try {
+            uri = new URIBuilder(this.url + "/v3/operator_lookup").addParameter("NUMBER", number).build();
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+        
+        HttpGet get = new HttpGet(uri);
+        
+        return handleHttpResponse(get,
+            new TypeReference<Result<OperatorLookupResult>>(){});
 
-        return handleResponse(response, new TypeReference<Result<OperatorLookupResult>>(){});
     }
 
-    public HashMap<String, BigDecimal> getPrices() throws UnirestException, ZenSendException, JsonParseException, JsonMappingException, IOException {
-        HttpResponse<String> response = Unirest.get(this.url + "/v3/prices")
-            .header("X-API-KEY", this.apiKey)
-            .asString();
-
-        return handleResponse(response, new TypeReference<Result<Prices>>(){}).pricesInPence;
+    public HashMap<String, BigDecimal> getPrices() throws  ZenSendException, IOException {
+        
+        HttpGet get = new HttpGet(this.url + "/v3/prices");
+        
+        return handleHttpResponse(get,
+            new TypeReference<Result<Prices>>(){}).pricesInPence;
     }
 
-    public BigDecimal checkBalance() throws UnirestException, ZenSendException, JsonParseException, JsonMappingException, IOException {
-        HttpResponse<String> response = Unirest.get(this.url + "/v3/checkbalance")
-                                                 .header("X-API-KEY", this.apiKey)
-                                                 .asString();
+    public BigDecimal checkBalance() throws ZenSendException, IOException {
+        
+        HttpGet get = new HttpGet(this.url + "/v3/checkbalance");
 
-        return handleResponse(response, new TypeReference<Result<Balance>>(){}).balance;
+        return handleHttpResponse(get,
+            new TypeReference<Result<Balance>>(){}).balance;
+        
+
     }
 
     private void assertNoCommas(String[] numbers) {
@@ -88,20 +125,33 @@ public class Client {
         }
     }
 
-    private <T> T handleResponse(HttpResponse<String> response, TypeReference<Result<T>> typeRef) throws ZenSendException, JsonParseException, JsonMappingException, IOException {
-        if (!response.getHeaders().getFirst("content-type").equals("application/json")) {
-            throw new ZenSendException(response.getStatus(), null, null, null, null);
+    private <T> T handleHttpResponse(HttpRequestBase request, final TypeReference<Result<T>> typeRef) throws ZenSendException, IOException {
+        
+        request.addHeader("X-API-KEY", this.apiKey);
+
+        CloseableHttpResponse response = client.execute(request);
+        try {
+            Header contentType = response.getFirstHeader("content-type");
+            
+            if (!(contentType != null && "application/json".equals(contentType.getValue()))) {
+                EntityUtils.consume(response.getEntity());
+                throw new ZenSendException(response.getStatusLine().getStatusCode(), null, null, null, null);
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+             
+            Result<T> result = mapper.readValue(new InputStreamReader(response.getEntity().getContent(), Charset.forName("UTF-8")), typeRef);
+
+            if (result.success == null) {
+                handleError(response.getStatusLine().getStatusCode(), result.failure);
+            }
+
+            return result.success;            
+        } finally {
+            response.close();
         }
+      
 
-        ObjectMapper mapper = new ObjectMapper();
-
-        Result<T> result = mapper.readValue(response.getBody(), typeRef);
-
-        if (result.success == null) {
-            handleError(response.getStatus(), result.failure);
-        }
-
-        return result.success;
     }
 
     private void handleError(int httpCode, ZenSendError error) throws ZenSendException {

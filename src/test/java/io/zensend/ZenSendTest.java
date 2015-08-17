@@ -6,6 +6,9 @@ import static org.junit.Assert.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
 
+import org.apache.http.impl.client.HttpClients;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -19,26 +22,34 @@ public class ZenSendTest {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(8089);
 
+    private Client client;
+    
+    @Before
+    public void setup() {
+        client = new Client(apiKey, HttpClients.createDefault(), host);
+    }
+    
+    @After
+    public void teardown() throws Exception {
+        client.close();
+    }
+    
     @Test
     public void checkBalanceSuccessTest() throws Exception {
         setupMockServer("/v3/checkbalance", 200, "{\"success\":{\"balance\":4000.84}}");
 
-        Client client = getClient();
 
         BigDecimal result = client.checkBalance();
 
         assertEquals(new BigDecimal("4000.84"), result);
     }
 
-    private Client getClient() {
-        return new Client(apiKey, host);
-    }
+
     
     @Test
     public void checkBalanceFailureTest() throws Exception {
         setupMockServer("/v3/checkbalance", 403, "{\"failure\":{\"failcode\":\"NOT_AUTHORIZED\"}}");
 
-        Client client = getClient();
 
         try {
             client.checkBalance();
@@ -61,7 +72,6 @@ public class ZenSendTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"success\":{\"mcc\":\"234\",\"mnc\":\"34\",\"operator\":\"eeora-uk\",\"new_balance_in_pence\":3985.84,\"cost_in_pence\":15.0}}")));
 
-        Client client = getClient();
 
         OperatorLookupResult result = client.lookupOperator(number);
 
@@ -84,7 +94,6 @@ public class ZenSendTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"failure\":{\"failcode\":\"SYSTEM_FAILURE\",\"new_balance_in_pence\":4046.0,\"cost_in_pence\":15.0}}")));
 
-        Client client = getClient();
 
         try {
             client.lookupOperator(number);
@@ -105,7 +114,6 @@ public class ZenSendTest {
 
         setupMockServer("/v3/prices", 200, "{\"success\":{\"prices_in_pence\":{\"NL\":0.04,\"LR\":0.028}}}");
 
-        Client client = getClient();
 
         HashMap<String, BigDecimal> result = client.getPrices();
         assertEquals(expectedPrices, result);
@@ -115,7 +123,6 @@ public class ZenSendTest {
     public void getPricesFailureTest() throws Exception {
         setupMockServer("/v3/prices", 403, "{\"failure\":{\"failcode\":\"NOT_AUTHORIZED\"}}");
 
-        Client client = getClient();
 
         try {
             client.getPrices();
@@ -130,7 +137,7 @@ public class ZenSendTest {
     public void sendSmsMinimalSuccessTest() throws Exception {
         Message message = new Message();
         message.numbers = new String[]{"44787878787", "449999999999"};
-        message.body = "message body";
+        message.body = "message body£";
         message.originator = "orig";
 
         stubFor(post(urlPathEqualTo("/v3/sendsms"))
@@ -140,7 +147,6 @@ public class ZenSendTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"success\":{\"txguid\":\"eb224587-840e-456c-9e36-7e8af1fe0d56\",\"numbers\":2,\"smsparts\":1,\"encoding\":\"gsm\",\"cost_in_pence\":0.04,\"new_balance_in_pence\":3985.8}}")));
 
-        Client client = getClient();
         SmsResult result = client.sendSms(message);
 
         assertEquals("eb224587-840e-456c-9e36-7e8af1fe0d56", result.txGuid);
@@ -151,7 +157,7 @@ public class ZenSendTest {
         assertEquals(new BigDecimal("3985.8"), result.newBalanceInPence);
         
         verify(postRequestedFor(urlPathEqualTo("/v3/sendsms"))
-            .withRequestBody(equalTo("BODY=message+body&NUMBERS=44787878787%2C449999999999&ORIGINATOR=orig")));
+            .withRequestBody(equalTo("BODY=message+body%C2%A3&NUMBERS=44787878787%2C449999999999&ORIGINATOR=orig")));
     }
 
     @Test
@@ -171,7 +177,6 @@ public class ZenSendTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"success\":{\"txguid\":\"eb224587-840e-456c-9e36-7e8af1fe0d56\",\"numbers\":2,\"smsparts\":1,\"encoding\":\"gsm\",\"cost_in_pence\":0.04,\"new_balance_in_pence\":3985.8}}")));
 
-        Client client = getClient();
         SmsResult result = client.sendSms(message);
 
         assertEquals("eb224587-840e-456c-9e36-7e8af1fe0d56", result.txGuid);
@@ -182,7 +187,7 @@ public class ZenSendTest {
         assertEquals(new BigDecimal("3985.8"), result.newBalanceInPence);
         
         verify(postRequestedFor(urlPathEqualTo("/v3/sendsms"))
-            .withRequestBody(equalTo("BODY=message+body&ENCODING=gsm&NUMBERS=44787878787%2C449999999999&ORIGINATOR=orig&ORIGINATOR_TYPE=alpha&TIMETOLIVE=100")));
+            .withRequestBody(equalTo("BODY=message+body&NUMBERS=44787878787%2C449999999999&ORIGINATOR=orig&ORIGINATOR_TYPE=alpha&TIMETOLIVE=100&ENCODING=gsm")));
     }
 
     @Test
@@ -199,7 +204,6 @@ public class ZenSendTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody("{\"failure\":{\"failcode\":\"NOT_AUTHORIZED\"}}")));
 
-        Client client = getClient();
 
         try {
             client.sendSms(message);
@@ -217,7 +221,6 @@ public class ZenSendTest {
         message.body = "message body";
         message.originator = "orig";
 
-        Client client = getClient();
 
         try {
             client.sendSms(message);
@@ -236,7 +239,6 @@ public class ZenSendTest {
                 .withHeader("Content-Type", "text/html")
                 .withBody("<body>hello</body>")));
 
-        Client client = getClient();
 
         try {
             client.checkBalance();
