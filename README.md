@@ -77,3 +77,8 @@ System.out.println(
     opLookup.newBalanceInPence
 );
 ```
+
+## Release
+
+    mvn release:clean release:prepare
+    mvn release:perform
