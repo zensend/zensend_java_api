@@ -7,11 +7,11 @@ public class ZenSendException extends Exception {
      * 
      */
     private static final long serialVersionUID = 1L;
-    public int httpCode;
-    public String failCode;
-    public String parameter;
-    public BigDecimal costInPence;
-    public BigDecimal newBalanceInPence;
+    public final int httpCode;
+    public final String failCode;
+    public final String parameter;
+    public final BigDecimal costInPence;
+    public final BigDecimal newBalanceInPence;
 
     public ZenSendException(int httpCode, String failCode, String parameter, BigDecimal costInPence, BigDecimal newBalanceInPence) {
         this.httpCode = httpCode;
