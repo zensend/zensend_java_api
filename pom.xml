@@ -121,22 +121,6 @@
       
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>1.5</version>
-        <executions>
-          <execution>
-            <id>sign-artifacts</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      
-      
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
         <version>2.5</version>
         <configuration>
@@ -150,4 +134,38 @@
     
     
   </build>
+
+    <profiles>
+        <profile>
+            <id>release-profile</id>
+            <!--
+            Signs all artifacts before deploying to Maven Central.
+            -->
+            <build>
+                <plugins>
+                    <plugin>
+                        <!--
+                        The goal is to sign all artifacts so that the user may verify them before downloading.
+                        The automatic build system may reuire your key ID, and passphrase specified using system properties:
+                        -Dgpg.passphrase="<passphrase>" -Dgpg.keyname="<your key ID>"
+                        In order to create the key pair, use the command "gpg &ndash;&ndash;gen-key".
+                        (&ndash;&ndash; stands for double dash)
+                        -->
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>gpg-sign</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+      </profiles>
+
 </project>
