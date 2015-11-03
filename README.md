@@ -1,5 +1,9 @@
 [![Build Status](https://travis-ci.org/zensend/zensend_java_api.svg?branch=master)](https://travis-ci.org/zensend/zensend_java_api)
 
+## Installation
+
+The library is distributed via Maven [io.zensend::zensend](http://mvnrepository.com/artifact/io.zensend/zensend/0.0.1)
+
 ## Examples
 Create an instance of the client
 ```java
