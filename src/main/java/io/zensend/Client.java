@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Client implements Closeable {
     private String apiKey;
     private String url;
-    private static final String ZENSEND_URL = "https://zensend.io";
+    private static final String ZENSEND_URL = "https://api.zensend.io";
     private CloseableHttpClient client;
     
     public Client(String apiKey) {
