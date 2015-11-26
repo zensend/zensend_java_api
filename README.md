@@ -2,7 +2,7 @@
 
 ## Installation
 
-The library is distributed via Maven [io.zensend::zensend](http://mvnrepository.com/artifact/io.zensend/zensend/0.0.1)
+The library is distributed via Maven [io.zensend::zensend](http://mvnrepository.com/artifact/io.zensend/zensend/0.0.2)
 
 ## Examples
 Create an instance of the client
@@ -85,4 +85,4 @@ System.out.println(
 ## Release
 
     mvn release:clean release:prepare
-    mvn release:perform
+    mvn release:perform -P release-profile
