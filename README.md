@@ -86,3 +86,5 @@ System.out.println(
 
     mvn release:clean release:prepare
     mvn release:perform -P release-profile
+
+    mvn deploy -P release-profile
