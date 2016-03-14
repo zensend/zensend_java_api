@@ -71,7 +71,7 @@ System.out.println(prices);
 ### Operator Lookup
 This allows you to lookup the operator of a given MSISDN
 ```java
-OperatorLookupResult opLookup = client.lookupOperator("447821425039");
+OperatorLookupResult opLookup = client.lookupOperator("447777777777");
 
 System.out.println(
     opLookup.mcc + ":" +
