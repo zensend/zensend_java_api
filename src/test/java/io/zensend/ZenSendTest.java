@@ -134,6 +134,54 @@ public class ZenSendTest {
     }
 
     @Test
+    public void sendCreateKeywordTest() throws Exception {
+        CreateKeywordRequest request = new CreateKeywordRequest();
+        request.shortcode = "SC";
+        request.keyword = "KW";
+        
+
+        stubFor(post(urlPathEqualTo("/v3/keywords"))
+            .withHeader("X-API-KEY", equalTo(apiKey))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"success\":{\"cost_in_pence\":0.04,\"new_balance_in_pence\":3985.8}}")));
+
+        CreateKeywordResult result = client.createKeyword(request);
+
+        assertEquals(new BigDecimal("0.04"), result.costInPence);
+        assertEquals(new BigDecimal("3985.8"), result.newBalanceInPence);
+        
+        verify(postRequestedFor(urlPathEqualTo("/v3/keywords"))
+            .withRequestBody(equalTo("SHORTCODE=SC&KEYWORD=KW&IS_STICKY=false")));
+    }
+
+    @Test
+    public void sendCreateKeywordWithOptionsTest() throws Exception {
+        CreateKeywordRequest request = new CreateKeywordRequest();
+        request.shortcode = "SC";
+        request.keyword = "KW";
+        request.isSticky = true;
+        request.moURL = "http://mo";
+        
+
+        stubFor(post(urlPathEqualTo("/v3/keywords"))
+            .withHeader("X-API-KEY", equalTo(apiKey))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"success\":{\"cost_in_pence\":0.04,\"new_balance_in_pence\":3985.8}}")));
+
+        CreateKeywordResult result = client.createKeyword(request);
+
+        assertEquals(new BigDecimal("0.04"), result.costInPence);
+        assertEquals(new BigDecimal("3985.8"), result.newBalanceInPence);
+        
+        verify(postRequestedFor(urlPathEqualTo("/v3/keywords"))
+            .withRequestBody(equalTo("SHORTCODE=SC&KEYWORD=KW&IS_STICKY=true&MO_URL=http%3A%2F%2Fmo")));
+    }
+
+    @Test
     public void sendSmsMinimalSuccessTest() throws Exception {
         Message message = new Message();
         message.numbers = new String[]{"44787878787", "449999999999"};

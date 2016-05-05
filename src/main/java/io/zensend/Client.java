@@ -53,6 +53,22 @@ public class Client implements Closeable {
         client.close();
     }
 
+    public CreateKeywordResult createKeyword(CreateKeywordRequest request) throws ZenSendException, IOException {
+
+        Form form = Form.form()
+                .add("SHORTCODE", request.shortcode)
+                .add("KEYWORD", request.keyword)
+                .add("IS_STICKY", request.isSticky ? "true" : "false");
+        if (request.moURL != null) {
+            form.add("MO_URL", request.moURL);
+        }
+
+        HttpPost post = new HttpPost(this.url + "/v3/keywords");
+        post.setEntity(new UrlEncodedFormEntity(form.build(), "utf-8"));
+        
+        return handleHttpResponse(post, new TypeReference<Result<CreateKeywordResult>>(){});
+    }
+
     public SmsResult sendSms(Message message) throws ZenSendException, IOException {
         assertNoCommas(message.numbers);
 
