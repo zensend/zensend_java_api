@@ -26,7 +26,7 @@ public class ZenSendTest {
     
     @Before
     public void setup() {
-        client = new Client(apiKey, HttpClients.createDefault(), host);
+        client = new Client(apiKey, HttpClients.createDefault(), host, host);
     }
     
     @After
@@ -247,6 +247,57 @@ public class ZenSendTest {
             assertEquals(500, ex.httpCode);
         }
     }
+
+    @Test
+    public void createMsisdnVerificationTest() throws Exception {
+        stubFor(post(urlPathEqualTo("/api/msisdn_verify"))
+            .withHeader("X-API-KEY", equalTo(apiKey))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"success\": {\"session\":\"SESS\"}}")));
+
+        String sess = client.createMsisdnVerification("441234567890");
+
+        assertEquals("SESS", sess);
+        verify(postRequestedFor(urlPathEqualTo("/api/msisdn_verify"))
+            .withRequestBody(equalTo("NUMBER=441234567890")));
+
+    }  
+
+    @Test
+    public void createMsisdnVerificationWithOptionsTest() throws Exception {
+
+        stubFor(post(urlPathEqualTo("/api/msisdn_verify"))
+            .withHeader("X-API-KEY", equalTo(apiKey))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"success\": {\"session\":\"SESS\"}}")));
+
+        String sess = client.createMsisdnVerification("441234567890", "message", "originator");
+
+        assertEquals("SESS", sess);
+        verify(postRequestedFor(urlPathEqualTo("/api/msisdn_verify"))
+            .withRequestBody(equalTo("NUMBER=441234567890&MESSAGE=message&ORIGINATOR=originator")));
+
+    }
+
+    @Test
+    public void msisdnVerificationStatusTest() throws Exception {
+        stubFor(get(urlPathEqualTo("/api/msisdn_verify"))
+            .withHeader("X-API-KEY", equalTo(apiKey))
+            .withQueryParam("SESSION", equalTo("SESS"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"success\": {\"msisdn\":\"441234567890\"}}")));
+
+        String msisdn = client.msisdnVerificationStatus("SESS");
+        assertEquals("441234567890", msisdn);
+
+    }
+
 
     private void setupMockServer(String url, int status, String body) {
         stubFor(get(urlEqualTo(url))

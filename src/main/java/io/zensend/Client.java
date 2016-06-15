@@ -30,7 +30,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class Client implements Closeable {
     private String apiKey;
     private String url;
+    private String verifyUrl;
     private static final String ZENSEND_URL = "https://api.zensend.io";
+    private static final String VERIFY_URL = "https://verify.zensend.io";
+
     private CloseableHttpClient client;
     
     public Client(String apiKey) {
@@ -40,17 +43,61 @@ public class Client implements Closeable {
     }
 
     public Client(String apiKey, CloseableHttpClient client) {
-        this(apiKey, client, ZENSEND_URL);
+        this(apiKey, client, ZENSEND_URL, VERIFY_URL);
     }
     
     public Client(String apiKey, CloseableHttpClient client, String url) {
+        this(apiKey, client, url, VERIFY_URL);
+    }
+
+    public Client(String apiKey, CloseableHttpClient client, String url, String verifyUrl) {
         this.apiKey = apiKey;
         this.url = url;
         this.client = client;
+        this.verifyUrl = verifyUrl;
     }
-    
+
     public void close() throws IOException {
         client.close();
+    }
+
+    public String createMsisdnVerification(String number) throws ZenSendException, IOException {
+        return createMsisdnVerification(number, null, null);
+    }
+
+    public String createMsisdnVerification(String number, String message, String originator) throws ZenSendException, IOException {
+        Form form = Form.form();
+        form.add("NUMBER", number);
+
+
+        if (message != null) {
+            form.add("MESSAGE", message);
+        }
+
+        if (originator != null) {
+            form.add("ORIGINATOR", originator);
+        }
+    
+        HttpPost post = new HttpPost(this.verifyUrl + "/api/msisdn_verify");
+        post.setEntity(new UrlEncodedFormEntity(form.build(), "utf-8"));
+
+        return handleHttpResponse(post, new TypeReference<Result<CreateMsisdnVerificationResult>>(){}).session;
+    }
+
+    public String msisdnVerificationStatus(String session) throws ZenSendException, IOException {
+        URI uri;
+        
+        try {
+            uri = new URIBuilder(this.verifyUrl + "/api/msisdn_verify").addParameter("SESSION", session).build();
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+        
+        HttpGet get = new HttpGet(uri);
+        
+        return handleHttpResponse(get,
+            new TypeReference<Result<MsisdnVerificationStatusResult>>(){}).msisdn;
+
     }
 
     public SmsResult sendSms(Message message) throws ZenSendException, IOException {
@@ -197,5 +244,15 @@ public class Client implements Closeable {
     private static class Prices {
         @JsonProperty("prices_in_pence")
         public HashMap<String, BigDecimal> pricesInPence;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class CreateMsisdnVerificationResult {
+        public String session;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class MsisdnVerificationStatusResult {
+        public String msisdn;
     }
 }
