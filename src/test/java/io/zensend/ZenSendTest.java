@@ -299,6 +299,31 @@ public class ZenSendTest {
     }
 
 
+    @Test
+    public void testCreateSubAccount() throws Exception {
+        Message message = new Message();
+        message.numbers = new String[]{"44787878787", "449999999999"};
+        message.body = "message body£";
+        message.originator = "orig";
+
+        stubFor(post(urlPathEqualTo("/v3/sub_accounts"))
+            .withHeader("X-API-KEY", equalTo(apiKey))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"success\":{\"name\":\"Name\",\"api_key\":\"ApiKey\"}}")));
+
+        CreateSubAccountResult result = client.createSubAccount("Name");
+
+        assertEquals("Name", result.name);
+        assertEquals("ApiKey", result.apiKey);
+       
+        
+        verify(postRequestedFor(urlPathEqualTo("/v3/sub_accounts"))
+            .withRequestBody(equalTo("NAME=Name")));
+    }
+
+
     private void setupMockServer(String url, int status, String body) {
         stubFor(get(urlEqualTo(url))
             .withHeader("X-API-KEY", equalTo(apiKey))

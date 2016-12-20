@@ -100,6 +100,16 @@ public class Client implements Closeable {
 
     }
 
+    public CreateSubAccountResult createSubAccount(String name) throws ZenSendException, IOException {
+        Form form = Form.form()
+            .add("NAME", name);
+
+        HttpPost post = new HttpPost(this.url + "/v3/sub_accounts");
+        post.setEntity(new UrlEncodedFormEntity(form.build(), "utf-8"));
+        
+        return handleHttpResponse(post, new TypeReference<Result<CreateSubAccountResult>>(){});        
+    }
+
     public SmsResult sendSms(Message message) throws ZenSendException, IOException {
         assertNoCommas(message.numbers);
 
