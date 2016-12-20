@@ -82,6 +82,17 @@ System.out.println(
 );
 ```
 
+### Create Sub Account
+This allows you to create a sub account to separate your usage
+```java
+CreateSubAccountResult result = client.createSubAccount("Name");
+
+System.out.println(
+    result.name + ":" +
+    result.apiKey + ":"
+);
+```
+
 ## Release
 
     mvn release:clean release:prepare
